@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { X, Camera, Heart, Smile, Frown, Star } from "lucide-react"
+import { X, Heart, Smile, Frown, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
-
 import { Card, CardContent } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
+import CupSizeSelector from './cup-size-selector'
+import SugarLevelCalculator from './sugar-level-calculator'
+import BrandSearch from './brand-search'
 
 interface RecordEntryProps {
   onClose: () => void
@@ -15,8 +17,10 @@ export default function RecordEntry({ onClose }: RecordEntryProps) {
 
   const [selectedDrink, setSelectedDrink] = useState<any>(null)
   const [mood, setMood] = useState("")
-  const [photo, setPhoto] = useState<string | null>(null)
+  const [cupSize, setCupSize] = useState<"small" | "medium" | "large">(\'medium\')
+  const [sugarLevel, setSugarLevel] = useState(50)
   const [notes, setNotes] = useState("")
+  const [showBrandSearch, setShowBrandSearch] = useState(false)
 
 
 
@@ -27,20 +31,83 @@ export default function RecordEntry({ onClose }: RecordEntryProps) {
     { key: "celebrating", label: "庆祝", icon: <Star className="w-4 h-4" />, color: "bg-purple-100 text-purple-800" },
   ]
 
+  // 计算总热量
+  const calculateTotalCalories = () => {
+    if (!selectedDrink) return 0
+
+    // 基础热量
+    let baseCalories = selectedDrink.calories
+
+    // 根据杯型调整热量
+    const cupSizeMultiplier = {
+      small: 0.8,
+      medium: 1,
+      large: 1.3
+    }
+    baseCalories *= cupSizeMultiplier[cupSize]
+
+    // 添加糖的热量
+    const sugarCalories = {
+      small: 20,
+      medium: 30,
+      large: 40
+    }
+    const sugarRatio = sugarLevel / 100
+    const totalSugarCalories = sugarCalories[cupSize] * sugarRatio
+
+    return Math.round(baseCalories + totalSugarCalories)
+  }
+
   const handleSubmit = () => {
     const record = {
       drink: selectedDrink,
+      cupSize,
+      sugarLevel,
+      sugarLevelName: getSugarLevelName(sugarLevel),
       mood,
-      photo,
       notes,
+      calories: calculateTotalCalories(),
       timestamp: new Date(),
     }
     console.log("Recording:", record)
     onClose()
   }
 
+  // 获取糖度名称
+  const getSugarLevelName = (percentage: number) => {
+    if (percentage === 0) return "无糖"
+    if (percentage <= 30) return "三分糖"
+    if (percentage <= 50) return "五分糖"
+    if (percentage <= 70) return "七分糖"
+    return "全糖"
+  }
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <>    
+      {/* Brand Search Modal */}
+      {showBrandSearch && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-xl font-bold">选择奶茶</h2>
+              <Button variant="ghost" size="sm" onClick={() => setShowBrandSearch(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-6">
+              <BrandSearch
+                onCalorieCalculate={(product) => {
+                  setSelectedDrink(product);
+                  setShowBrandSearch(false);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Record Entry Modal */}
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-bold">记录奶茶</h2>
@@ -54,26 +121,59 @@ export default function RecordEntry({ onClose }: RecordEntryProps) {
 
 
 
+          {/* Select Drink Button */}
+          <div>
+            <Button
+              onClick={() => setShowBrandSearch(true)}
+              className="w-full border-mint/30 bg-transparent hover:bg-mint/5"
+            >
+              {selectedDrink ? `已选择: ${selectedDrink.name}` : "选择奶茶"}
+            </Button>
+          </div>
+
           {/* Selected Drink Display */}
           {selectedDrink && (
-            <Card className="border-mint/20 bg-mint/5">
+            <Card className="border-mint/20 bg-mint/5 mt-4">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="font-semibold">{selectedDrink.name}</h4>
                     <p className="text-sm text-gray-600">
-                      {selectedDrink.brand} · {selectedDrink.config}
+                      {selectedDrink.brand}
                     </p>
                   </div>
-                  <div className="text-2xl font-bold text-mint-dark">{selectedDrink.calories}kcal</div>
+                  <div className="text-2xl font-bold text-mint-dark">{calculateTotalCalories()}kcal</div>
                 </div>
               </CardContent>
             </Card>
           )}
 
+          {/* Cup Size Selection */}
+          {selectedDrink && (
+            <div>
+              <h3 className="font-medium mb-3 mt-6">选择杯型</h3>
+              <CupSizeSelector
+                value={cupSize}
+                onChange={(size) => setCupSize(size)}
+              />
+            </div>
+          )}
+
+          {/* Sugar Level Selection */}
+          {selectedDrink && (
+            <div>
+              <h3 className="font-medium mb-3 mt-6">选择糖度</h3>
+              <SugarLevelCalculator
+                value={sugarLevel}
+                onChange={(level) => setSugarLevel(level)}
+                cupSize={cupSize}
+              />
+            </div>
+          )}
+
           {/* Mood Selection */}
           <div>
-            <h3 className="font-medium mb-3">今天的心情</h3>
+            <h3 className="font-medium mb-3 mt-6">今天的心情</h3>
             <div className="grid grid-cols-4 gap-3">
               {moods.map((moodOption) => (
                 <button
@@ -89,19 +189,6 @@ export default function RecordEntry({ onClose }: RecordEntryProps) {
                   </div>
                 </button>
               ))}
-            </div>
-          </div>
-
-          {/* Photo Upload */}
-          <div>
-            <h3 className="font-medium mb-3">拍照记录</h3>
-            <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center">
-              <Camera className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-              <p className="text-sm text-gray-500 mb-2">为你的奶茶拍张照片吧</p>
-              <Button variant="outline" className="border-mint/30 bg-transparent">
-                <Camera className="w-4 h-4 mr-2" />
-                拍照
-              </Button>
             </div>
           </div>
 

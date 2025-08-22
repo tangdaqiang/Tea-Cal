@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import RecordEntry from "@/components/record-entry"
 import GrowthDashboard from "@/components/growth-dashboard"
 import BudgetTracker from "@/components/budget-tracker"
-import AchievementSystem from "@/components/achievement-system"
 
 export default function MyRecordsPage() {
   const [showRecordEntry, setShowRecordEntry] = useState(false)
@@ -38,11 +37,10 @@ export default function MyRecordsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="dashboard">数据看板</TabsTrigger>
             <TabsTrigger value="records">记录历史</TabsTrigger>
             <TabsTrigger value="budget">预算管理</TabsTrigger>
-            <TabsTrigger value="achievements">成长成就</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
@@ -89,9 +87,7 @@ export default function MyRecordsPage() {
             <BudgetTracker />
           </TabsContent>
 
-          <TabsContent value="achievements" className="space-y-6">
-            <AchievementSystem />
-          </TabsContent>
+
         </Tabs>
       </div>
 

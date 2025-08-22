@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import IngredientSelector from './ingredient-selector'
 
 interface MilkTeaProduct {
   id: string
@@ -9623,10 +9625,13 @@ const mockProducts: MilkTeaProduct[] = [
   },
 ]
 
-export default function BrandSearch() {
+export default function BrandSearch({ onCalorieCalculate }: { onCalorieCalculate?: (totalCalories: number) => void }) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedBrand, setSelectedBrand] = useState("all")
   const [calorieFilter, setCalorieFilter] = useState("all")
+  const [addIngredients, setAddIngredients] = useState(false)
+  const [selectedIngredients, setSelectedIngredients] = useState<{name: string, calories: number, quantity: number}[]>([])
+  const [selectedProduct, setSelectedProduct] = useState<MilkTeaProduct | null>(null)
 
   const brands = ["all", "蜜雪冰城", "奈雪的茶", "coco", "茶百道", "一点点", "益禾堂", "沪上阿姨"];
 
@@ -9729,7 +9734,18 @@ export default function BrandSearch() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredProducts.map((product) => (
-            <Card key={product.id} className="border-mint/20 hover:shadow-md transition-shadow cursor-pointer">
+            <Card 
+              key={product.id} 
+              className={`border-mint/20 hover:shadow-md transition-shadow cursor-pointer ${selectedProduct?.id === product.id ? 'ring-2 ring-mint' : ''}`}
+              onClick={() => {
+                setSelectedProduct(product);
+                setAddIngredients(false);
+                setSelectedIngredients([]);
+                if (onCalorieCalculate) {
+                  onCalorieCalculate(product.calories);
+                }
+              }}
+            >
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div>
@@ -9779,6 +9795,87 @@ export default function BrandSearch() {
             </Card>
           ))}
         </div>
+
+        {selectedProduct && (
+          <Card className="mt-6 border-mint/20">
+            <CardHeader>
+              <CardTitle className="text-lg">已选产品</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col md:flex-row gap-6">
+                <div className="flex-1">
+                  <h4 className="font-semibold text-lg mb-2">{selectedProduct.name}</h4>
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Badge variant="outline">{selectedProduct.brand}</Badge>
+                    <Badge className={getCategoryColor(selectedProduct.category)}>{getCategoryLabel(selectedProduct.category)}</Badge>
+                  </div>
+                  <div className="space-y-2 text-sm text-gray-600 mb-4">
+                    <div className="flex justify-between">
+                      <span>糖度:</span>
+                      <span>{selectedProduct.sugar}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>规格:</span>
+                      <span>{selectedProduct.size}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>评分:</span>
+                      <div className="flex items-center space-x-1">
+                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                        <span>{selectedProduct.rating}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium">基础热量:</span>
+                      <span className="font-bold text-mint-dark">{selectedProduct.calories} kcal</span>
+                    </div>
+                    {selectedIngredients.length > 0 && (
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="font-medium">小料热量:</span>
+                        <span className="font-bold text-mint-dark">
+                          {selectedIngredients.reduce((sum, ing) => sum + ing.calories * ing.quantity, 0)} kcal
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center pt-2 border-t border-gray-200">
+                      <span className="font-bold">总热量:</span>
+                      <span className="font-bold text-xl text-mint-dark">
+                        {selectedProduct.calories + selectedIngredients.reduce((sum, ing) => sum + ing.calories * ing.quantity, 0)} kcal
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-6">
+                <div className="flex items-center mb-4">
+                  <Checkbox
+                    checked={addIngredients}
+                    onCheckedChange={(checked) => setAddIngredients(checked || false)}
+                    className="mr-2"
+                  />
+                  <span>添加小料</span>
+                </div>
+                
+                {addIngredients && (
+                  <IngredientSelector
+                    onIngredientsChange={(ingredients) => {
+                      setSelectedIngredients(ingredients);
+                      if (onCalorieCalculate) {
+                        const totalCalories = selectedProduct.calories + ingredients.reduce((sum, ing) => sum + ing.calories * ing.quantity, 0);
+                        onCalorieCalculate(totalCalories);
+                      }
+                    }}
+                  />
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {filteredProducts.length === 0 && (
           <div className="text-center py-8 text-gray-500">

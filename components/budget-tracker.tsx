@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Target, AlertTriangle, Calendar } from "lucide-react"
+import { Target, AlertTriangle, Calendar, Info } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
@@ -220,6 +220,30 @@ export default function BudgetTracker() {
           <Button className="bg-mint hover:bg-mint-dark text-white">保存设置</Button>
         </CardContent>
       </Card>
-    </div>
-  )
-}
+    {/* Calorie Information */}
+    <Card className="border-mint/20 mt-6">
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center">
+          <Info className="w-5 h-5 text-mint mr-2" />
+          卡路里概念
+        </CardTitle>
+        <CardDescription>了解卡路里与健康的关系</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        <p>卡路里是衡量食物能量的单位。对于成年人来说，每天需要的卡路里摄入量因性别、年龄、体重和活动水平而异：</p>
+        <ul className="list-disc pl-5 space-y-2">
+          <li>轻体力活动的成年女性：约1800-2000卡路里/天</li>
+          <li>轻体力活动的成年男性：约2200-2400卡路里/天</li>
+        </ul>
+        <p>一杯奶茶的卡路里含量通常在200-500卡路里之间，具体取决于奶茶的种类、杯型和糖度：</p>
+        <ul className="list-disc pl-5 space-y-2">
+          <li>一杯300ml的奶茶(中杯)：约300-400卡路里</li>
+          <li>一杯500ml的奶茶(大杯)：约400-500卡路里</li>
+          <li>添加珍珠、椰果等配料：额外增加50-100卡路里/份</li>
+          <li>全糖比无糖奶茶：额外增加50-100卡路里</li>
+        </ul>
+        <p>合理控制每日卡路里摄入量，保持能量平衡，有助于维持健康体重和良好的身体状态。</p>
+      </CardContent>
+    </Card>
+  </div>
+)
