@@ -80,7 +80,8 @@ export default function MyRecordsPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="records" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="dashboard">数据看板</TabsTrigger>
             <TabsTrigger value="records">记录历史</TabsTrigger>
             <TabsTrigger value="budget">预算管理</TabsTrigger>
           </TabsList>
@@ -150,6 +151,7 @@ export default function MyRecordsPage() {
           <TabsContent value="budget" className="space-y-6">
             <BudgetTracker />
           </TabsContent>
+
         </Tabs>
       </div>
 

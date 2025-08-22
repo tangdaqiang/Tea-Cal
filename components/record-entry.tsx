@@ -7,6 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { mockProducts } from "@/components/brand-search"
+import CupSizeSelector from './cup-size-selector'
+import SugarLevelCalculator from './sugar-level-calculator'
+import BrandSearch from './brand-search'
 
 interface RecordEntryProps {
   onClose: () => void
@@ -32,6 +35,10 @@ export default function RecordEntry({ onClose }: RecordEntryProps) {
   const [matchedDrink, setMatchedDrink] = useState<MilkTeaProduct | null>(null)
   const [searchResults, setSearchResults] = useState<MilkTeaProduct[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [cupSize, setCupSize] = useState<"small" | "medium" | "large">('medium')
+  const [sugarLevel, setSugarLevel] = useState(50)
+  const [showBrandSearch, setShowBrandSearch] = useState(false)
+  const [selectedDrink, setSelectedDrink] = useState<MilkTeaProduct | null>(null)
 
   const moods = [
     { key: "happy", label: "开心", icon: <Smile className="w-4 h-4" />, color: "bg-green-100 text-green-800" },
@@ -58,6 +65,7 @@ export default function RecordEntry({ onClose }: RecordEntryProps) {
       // 如果只有一个结果，自动匹配
       if (results.length === 1) {
         setMatchedDrink(results[0])
+        setSelectedDrink(results[0]) // 同时设置selectedDrink
       } else {
         setMatchedDrink(null)
       }
@@ -76,21 +84,53 @@ export default function RecordEntry({ onClose }: RecordEntryProps) {
 
   const handleSelectDrink = (drink: MilkTeaProduct) => {
     setMatchedDrink(drink)
+    setSelectedDrink(drink) // 同时设置selectedDrink
     setDrinkName(drink.name)
     setSearchResults([])
+  }
+
+  // 计算总热量
+  const calculateTotalCalories = () => {
+    if (!selectedDrink) return 0
+
+    // 基础热量
+    let baseCalories = selectedDrink.calories
+
+    // 根据杯型调整热量
+    const cupSizeMultiplier = {
+      small: 0.8,
+      medium: 1,
+      large: 1.3
+    }
+    baseCalories *= cupSizeMultiplier[cupSize]
+
+    // 添加糖的热量
+    const sugarCalories = {
+      small: 20,
+      medium: 30,
+      large: 40
+    }
+    const sugarRatio = sugarLevel / 100
+    const totalSugarCalories = sugarCalories[cupSize] * sugarRatio
+
+    return Math.round(baseCalories + totalSugarCalories)
+  }
   }
 
   const handleSubmit = () => {
     const record = {
       id: Date.now().toString(), // 添加唯一ID
-      drink: matchedDrink ? {
-        name: matchedDrink.name,
-        brand: matchedDrink.brand,
-        calories: matchedDrink.calories
+      drink: selectedDrink || matchedDrink ? {
+        name: selectedDrink?.name || matchedDrink?.name || drinkName,
+        brand: selectedDrink?.brand || matchedDrink?.brand || '',
+        calories: calculateTotalCalories() || matchedDrink?.calories || 0
       } : { name: drinkName, calories: 0 },
+      cupSize,
+      sugarLevel,
+      sugarLevelName: getSugarLevelName(sugarLevel),
       mood,
       notes,
-      timestamp: new Date().toISOString(),
+      timestamp: new Date().toISOString()
     }
     
     // 从localStorage获取现有记录
@@ -104,8 +144,43 @@ export default function RecordEntry({ onClose }: RecordEntryProps) {
     onClose()
   }
 
+  // 获取糖度名称
+  const getSugarLevelName = (percentage: number) => {
+    if (percentage === 0) return "无糖"
+    if (percentage <= 30) return "三分糖"
+    if (percentage <= 50) return "五分糖"
+    if (percentage <= 70) return "七分糖"
+    return "全糖"
+  }
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+    <>    
+      {/* Brand Search Modal */}
+      {showBrandSearch && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-xl font-bold">选择奶茶</h2>
+              <Button variant="ghost" size="sm" onClick={() => setShowBrandSearch(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="p-6">
+              <BrandSearch
+                onCalorieCalculate={(product) => {
+                  setSelectedDrink(product);
+                  setMatchedDrink(product);
+                  setDrinkName(product.name);
+                  setShowBrandSearch(false);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Record Entry Modal */}
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-bold">记录奶茶</h2>
@@ -162,26 +237,63 @@ export default function RecordEntry({ onClose }: RecordEntryProps) {
             )}
           </div>
 
-          {/* Matched Drink Display */}
-          {matchedDrink && (
-            <Card className="border-mint/20 bg-mint/5">
+          {/* Select Drink Button */}
+          <div>
+            <Button
+              onClick={() => setShowBrandSearch(true)}
+              className="w-full border-mint/30 bg-transparent hover:bg-mint/5"
+            >
+              {selectedDrink || matchedDrink ? `已选择: ${selectedDrink?.name || matchedDrink?.name}` : "选择奶茶"}
+            </Button>
+          </div>
+
+          {/* Selected Drink Display */}
+          {(selectedDrink || matchedDrink) && (
+            <Card className="border-mint/20 bg-mint/5 mt-4">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-semibold">{matchedDrink.name}</h4>
+                    <h4 className="font-semibold">{selectedDrink?.name || matchedDrink?.name}</h4>
                     <p className="text-sm text-gray-600">
-                      {matchedDrink.brand} · {matchedDrink.size} · {matchedDrink.sugar}
+                      {selectedDrink?.brand || matchedDrink?.brand}
                     </p>
                   </div>
-                  <div className="text-2xl font-bold text-mint-dark">{matchedDrink.calories}kcal</div>
+                  <div className="text-2xl font-bold text-mint-dark">{calculateTotalCalories() || matchedDrink?.calories || 0}kcal</div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
                 </div>
               </CardContent>
             </Card>
           )}
 
+          {/* Cup Size Selection */}
+          {(selectedDrink || matchedDrink) && (
+            <div>
+              <h3 className="font-medium mb-3 mt-6">选择杯型</h3>
+              <CupSizeSelector
+                value={cupSize}
+                onChange={(size) => setCupSize(size)}
+              />
+            </div>
+          )}
+
+          {/* Sugar Level Selection */}
+          {(selectedDrink || matchedDrink) && (
+            <div>
+              <h3 className="font-medium mb-3 mt-6">选择糖度</h3>
+              <SugarLevelCalculator
+                value={sugarLevel}
+                onChange={(level) => setSugarLevel(level)}
+                cupSize={cupSize}
+              />
+            </div>
+          )}
+
           {/* Mood Selection */}
           <div>
-            <h3 className="font-medium mb-3">今天的心情</h3>
+            <h3 className="font-medium mb-3 mt-6">今天的心情</h3>
             <div className="grid grid-cols-4 gap-3">
               {moods.map((moodOption) => (
                 <button
@@ -217,7 +329,7 @@ export default function RecordEntry({ onClose }: RecordEntryProps) {
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={!drinkName.trim()}
+              disabled={!drinkName.trim() && !selectedDrink && !matchedDrink}
               className="flex-1 bg-mint hover:bg-mint-dark text-white"
             >
               完成记录

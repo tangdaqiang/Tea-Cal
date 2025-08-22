@@ -55,5 +55,4 @@ export default function BudgetTracker() {
       </Card>
     </div>
   )
-
 }
