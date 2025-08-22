@@ -11,10 +11,39 @@ import { AiAssistant } from "@/components/ai-assistant"
 import { ChevronDown, ChevronUp } from "lucide-react"
 
 export default function DashboardPage() {
+  // 小贴士数据
+  const tips = [
+    "💡 选择三分糖比全糖可以减少约60-80千卡热量，相当于少跑10分钟步！",
+    "💡 用椰果替代珍珠，既有嚼劲又能减少近100千卡热量。",
+    "💡 奶茶中的芝士奶盖通常含有较高脂肪，建议选择轻芝士版本。",
+    "💡 茶底选择绿茶或乌龙茶，相比奶茶底热量更低。",
+    "💡 避免添加额外的糖和炼乳，可以选择天然甜味剂代替。",
+    "💡 小杯奶茶比大杯少约100-200千卡热量，适量饮用更健康。",
+    "💡 仙草和冻冻是低热量的配料选择，适合控糖人群。",
+    "💡 鲜牛奶制作的奶茶比植脂末制作的更健康，但热量可能稍高。",
+    "💡 水果茶通常比奶茶热量低，但要注意含糖量。",
+    "💡 喝奶茶后可以增加15-30分钟的步行，帮助消耗多余热量。"
+  ]
+  
+  // 状态变量
+  const [dailyTip, setDailyTip] = useState(tips[0])
   const [user, setUser] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isCalorieTableCollapsed, setIsCalorieTableCollapsed] = useState(true)
   const router = useRouter()
+  
+  // 随机选择小贴士
+  const getRandomTip = () => {
+    const randomIndex = Math.floor(Math.random() * tips.length)
+    setDailyTip(tips[randomIndex])
+  }
+  
+  // 组件挂载时和每24小时更新小贴士
+  useEffect(() => {
+    getRandomTip()
+    const interval = setInterval(getRandomTip, 24 * 60 * 60 * 1000) // 24小时
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     // 检查登录状态
@@ -112,40 +141,39 @@ export default function DashboardPage() {
       {/* Main Content */}
       <div className="container mx-auto px-4 pb-16">
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Left Column - Hot Rankings and Calorie Table */}
+          {/* Left Column - Quick Access */}
           <div className="lg:col-span-2">
-            <Card className="mb-8">
+            <Card className="bg-gradient-to-br from-[#A8DADC]/5 to-[#F8F9FA]">
               <CardHeader>
-                <CardTitle className="text-xl text-gray-800">热门低卡奶茶排行榜</CardTitle>
-                <CardDescription>每日更新，帮你找到美味与健康的平衡</CardDescription>
+                <CardTitle className="text-2xl text-gray-800">快速开始</CardTitle>
+                <CardDescription>选择下方功能开始你的健康奶茶之旅</CardDescription>
               </CardHeader>
-              <CardContent>
-                <HotRankings />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-2xl text-gray-800">奶茶配料热量数据库</CardTitle>
-                    <CardDescription>点击配料名称查看详细说明，调整用量实时计算热量</CardDescription>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsCalorieTableCollapsed(!isCalorieTableCollapsed)}
-                    className="text-gray-500 hover:text-gray-700"
-                  >
-                    {isCalorieTableCollapsed ? <ChevronDown className="h-4 w-4" /> : <ChevronUp className="h-4 w-4" />}
+              <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Link href="/calculator" className="block">
+                  <Button variant="outline" className="w-full justify-center p-6 border-2 border-[#A8DADC]">
+                    <div className="text-3xl mb-2">🧮</div>
+                    <span>热量计算器</span>
                   </Button>
-                </div>
-              </CardHeader>
-              {!isCalorieTableCollapsed && (
-                <CardContent>
-                  <CalorieTable />
-                </CardContent>
-              )}
+                </Link>
+                <Link href="/my-records" className="block">
+                  <Button variant="outline" className="w-full justify-center p-6 border-2 border-[#A8DADC]">
+                    <div className="text-3xl mb-2">📝</div>
+                    <span>我的记录</span>
+                  </Button>
+                </Link>
+                <Link href="/recommendations" className="block">
+                  <Button variant="outline" className="w-full justify-center p-6 border-2 border-[#A8DADC]">
+                    <div className="text-3xl mb-2">⭐</div>
+                    <span>个性推荐</span>
+                  </Button>
+                </Link>
+                <Link href="/health-tasks" className="block">
+                  <Button variant="outline" className="w-full justify-center p-6 border-2 border-[#A8DADC]">
+                    <div className="text-3xl mb-2">🎯</div>
+                    <span>健康任务</span>
+                  </Button>
+                </Link>
+              </CardContent>
             </Card>
           </div>
 
@@ -184,9 +212,8 @@ export default function DashboardPage() {
                 <CardTitle className="text-lg text-gray-800">今日小贴士</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  💡 选择三分糖比全糖可以减少约60-80千卡热量，相当于少跑10分钟步！
-                  用椰果替代珍珠，既有嚼劲又能减少近100千卡。
+                <p className="text-sm text-gray-600 leading-relaxed" id="dailyTip">
+                  {dailyTip}
                 </p>
               </CardContent>
             </Card>

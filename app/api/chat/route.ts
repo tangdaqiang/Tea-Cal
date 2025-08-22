@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     console.log("用户消息:", message)
 
     const requestPayload = {
-      model: "deepseek-ai/DeepSeek-V3",
+      model: "Pro/deepseek-ai/DeepSeek-V3",
       messages: messages,
       max_tokens: 500,
       temperature: 0.8,

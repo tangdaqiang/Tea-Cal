@@ -1,24 +1,37 @@
 "use client"
 
-import { useState } from "react"
-import { X, Camera, Heart, Smile, Frown, Star } from "lucide-react"
+import { useState, useEffect } from "react"
+import { X, Heart, Smile, Frown, Star, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
-
+import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
+import { mockProducts } from "@/components/brand-search"
 
 interface RecordEntryProps {
   onClose: () => void
 }
 
+interface MilkTeaProduct {
+  id: string
+  name: string
+  brand: string
+  calories: number
+  sugar: string
+  size: string
+  ingredients: string[]
+  rating: number
+  category: "low" | "medium" | "high"
+  image?: string
+}
+
 export default function RecordEntry({ onClose }: RecordEntryProps) {
-
-  const [selectedDrink, setSelectedDrink] = useState<any>(null)
+  const [drinkName, setDrinkName] = useState("")
   const [mood, setMood] = useState("")
-  const [photo, setPhoto] = useState<string | null>(null)
   const [notes, setNotes] = useState("")
-
-
+  const [matchedDrink, setMatchedDrink] = useState<MilkTeaProduct | null>(null)
+  const [searchResults, setSearchResults] = useState<MilkTeaProduct[]>([])
+  const [isSearching, setIsSearching] = useState(false)
 
   const moods = [
     { key: "happy", label: "开心", icon: <Smile className="w-4 h-4" />, color: "bg-green-100 text-green-800" },
@@ -27,15 +40,67 @@ export default function RecordEntry({ onClose }: RecordEntryProps) {
     { key: "celebrating", label: "庆祝", icon: <Star className="w-4 h-4" />, color: "bg-purple-100 text-purple-800" },
   ]
 
+  // 搜索奶茶
+  const searchDrinks = (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([])
+      setMatchedDrink(null)
+      return
+    }
+
+    setIsSearching(true)
+    // 模拟搜索延迟
+    setTimeout(() => {
+      const results = mockProducts.filter(product => 
+        product.name.toLowerCase().includes(query.toLowerCase())
+      )
+      setSearchResults(results)
+      // 如果只有一个结果，自动匹配
+      if (results.length === 1) {
+        setMatchedDrink(results[0])
+      } else {
+        setMatchedDrink(null)
+      }
+      setIsSearching(false)
+    }, 300)
+  }
+
+  // 监听输入变化进行搜索
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      searchDrinks(drinkName)
+    }, 500)
+
+    return () => clearTimeout(delayDebounceFn)
+  }, [drinkName])
+
+  const handleSelectDrink = (drink: MilkTeaProduct) => {
+    setMatchedDrink(drink)
+    setDrinkName(drink.name)
+    setSearchResults([])
+  }
+
   const handleSubmit = () => {
     const record = {
-      drink: selectedDrink,
+      id: Date.now().toString(), // 添加唯一ID
+      drink: matchedDrink ? {
+        name: matchedDrink.name,
+        brand: matchedDrink.brand,
+        calories: matchedDrink.calories
+      } : { name: drinkName, calories: 0 },
       mood,
-      photo,
       notes,
-      timestamp: new Date(),
+      timestamp: new Date().toISOString(),
     }
-    console.log("Recording:", record)
+    
+    // 从localStorage获取现有记录
+    const existingRecords = JSON.parse(localStorage.getItem('milkTeaRecords') || '[]')
+    // 添加新记录
+    existingRecords.push(record)
+    // 保存回localStorage
+    localStorage.setItem('milkTeaRecords', JSON.stringify(existingRecords))
+    
+    console.log("Recording saved:", record)
     onClose()
   }
 
@@ -50,22 +115,65 @@ export default function RecordEntry({ onClose }: RecordEntryProps) {
         </div>
 
         <div className="p-6 space-y-6">
+          {/* Drink Name Input */}
+          <div>
+            <h3 className="font-medium mb-3">奶茶名称</h3>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="输入奶茶名称..."
+                value={drinkName}
+                onChange={(e) => setDrinkName(e.target.value)}
+                className="pl-10 border-mint/30"
+              />
+            </div>
 
+            {/* Calorie Note */}
+            {searchResults.length > 0 && (
+              <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm">
+                <p className="text-yellow-800">
+                  <span className="font-medium">热量参考:</span> {searchResults[0].calories}kcal ({searchResults[0].brand})
+                </p>
+                {searchResults.length > 1 && (
+                  <p className="text-yellow-700 mt-1">
+                    找到多个匹配结果，请从列表中选择具体的奶茶以获取准确热量
+                  </p>
+                )}
+              </div>
+            )}
 
+            {/* Search Results */}
+            {searchResults.length > 0 && (
+              <div className="mt-2 border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto bg-white z-10">
+                {searchResults.map((drink) => (
+                  <div
+                    key={drink.id}
+                    className="p-3 hover:bg-mint/10 cursor-pointer flex items-center justify-between"
+                    onClick={() => handleSelectDrink(drink)}
+                  >
+                    <div>
+                      <p className="font-medium">{drink.name}</p>
+                      <p className="text-xs text-gray-500">{drink.brand}</p>
+                    </div>
+                    <div className="font-bold text-mint-dark">{drink.calories}kcal</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
-
-          {/* Selected Drink Display */}
-          {selectedDrink && (
+          {/* Matched Drink Display */}
+          {matchedDrink && (
             <Card className="border-mint/20 bg-mint/5">
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-semibold">{selectedDrink.name}</h4>
+                    <h4 className="font-semibold">{matchedDrink.name}</h4>
                     <p className="text-sm text-gray-600">
-                      {selectedDrink.brand} · {selectedDrink.config}
+                      {matchedDrink.brand} · {matchedDrink.size} · {matchedDrink.sugar}
                     </p>
                   </div>
-                  <div className="text-2xl font-bold text-mint-dark">{selectedDrink.calories}kcal</div>
+                  <div className="text-2xl font-bold text-mint-dark">{matchedDrink.calories}kcal</div>
                 </div>
               </CardContent>
             </Card>
@@ -79,29 +187,14 @@ export default function RecordEntry({ onClose }: RecordEntryProps) {
                 <button
                   key={moodOption.key}
                   onClick={() => setMood(moodOption.key)}
-                  className={`p-3 rounded-lg border-2 transition-all text-center ${
-                    mood === moodOption.key ? "border-mint bg-mint/10" : "border-gray-200 hover:border-mint/50"
-                  }`}
-                >
+                  className={`p-3 rounded-lg border-2 transition-all text-center ${mood === moodOption.key ? "border-mint bg-mint/10" : "border-gray-200 hover:border-mint/50"}
+                  `}>
                   <div className="flex flex-col items-center space-y-1">
                     {moodOption.icon}
                     <span className="text-xs font-medium">{moodOption.label}</span>
                   </div>
                 </button>
               ))}
-            </div>
-          </div>
-
-          {/* Photo Upload */}
-          <div>
-            <h3 className="font-medium mb-3">拍照记录</h3>
-            <div className="border-2 border-dashed border-gray-200 rounded-lg p-6 text-center">
-              <Camera className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-              <p className="text-sm text-gray-500 mb-2">为你的奶茶拍张照片吧</p>
-              <Button variant="outline" className="border-mint/30 bg-transparent">
-                <Camera className="w-4 h-4 mr-2" />
-                拍照
-              </Button>
             </div>
           </div>
 
@@ -124,7 +217,7 @@ export default function RecordEntry({ onClose }: RecordEntryProps) {
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={!selectedDrink}
+              disabled={!drinkName.trim()}
               className="flex-1 bg-mint hover:bg-mint-dark text-white"
             >
               完成记录

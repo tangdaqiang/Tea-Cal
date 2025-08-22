@@ -98,22 +98,38 @@ export function AiAssistant() {
     let reader: ReadableStreamDefaultReader<Uint8Array> | null = null
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: userMessage,
-          userId: currentUser?.id,
-          conversationHistory: messages.slice(-10),
-        }),
-        signal: abortController.signal,
-      })
+        // 检查用户是否已登录
+        if (!currentUser) {
+          setMessages((prevMessages) => {
+            const updatedMessages = [...prevMessages]
+            updatedMessages[updatedMessages.length - 1] = {
+              type: "assistant",
+              content: "请先登录后再使用AI助手功能哦～",
+            }
+            return updatedMessages
+          })
+          setIsTyping(false)
+          return
+        }
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            message: userMessage,
+            userId: currentUser?.id,
+            conversationHistory: messages.slice(-10),
+          }),
+          signal: abortController.signal,
+        })
+
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error("Chat API error:", response.status, errorText)
+          throw new Error(`API error! status: ${response.status}, message: ${errorText}`)
+        }
 
       reader = response.body?.getReader()
       if (!reader) {
@@ -180,11 +196,23 @@ export function AiAssistant() {
       }
 
       console.error("Chat error:", error)
+      let errorMessage = "小敖现在有点忙，稍后再和你聊哦～"
+      if (error instanceof Error) {
+        if (error.message.includes("401")) {
+          errorMessage = "AI服务认证失败，请联系管理员"
+        } else if (error.message.includes("429")) {
+          errorMessage = "请求过于频繁，请稍后重试"
+        } else if (error.message.includes("请先登录")) {
+          errorMessage = error.message
+        } else {
+          errorMessage = `小敖遇到了问题: ${error.message.substring(0, 50)}...`
+        }
+      }
       setMessages((prevMessages) => {
         const updatedMessages = [...prevMessages]
         updatedMessages[updatedMessages.length - 1] = {
           type: "assistant",
-          content: "小敖现在有点忙，稍后再和你聊哦～",
+          content: errorMessage,
         }
         return updatedMessages
       })

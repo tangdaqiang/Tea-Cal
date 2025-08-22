@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Search, Filter, Star } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -21,7 +21,13 @@ interface MilkTeaProduct {
   image?: string
 }
 
-const mockProducts: MilkTeaProduct[] = [
+interface BrandSearchProps {
+  selectedIngredients?: Record<string, number>
+  onIngredientsChange?: (ingredients: Record<string, number>) => void
+  onDrinkSelect?: (drink: MilkTeaProduct) => void
+}
+
+export const mockProducts: MilkTeaProduct[] = [
   // 蜜雪冰城产品数据
   {
     id: "1",
@@ -9623,12 +9629,116 @@ const mockProducts: MilkTeaProduct[] = [
   },
 ]
 
-export default function BrandSearch() {
+export default function BrandSearch({ selectedIngredients = {}, onIngredientsChange }: BrandSearchProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedBrand, setSelectedBrand] = useState("all")
   const [calorieFilter, setCalorieFilter] = useState("all")
+  const [selectedProduct, setSelectedProduct] = useState<MilkTeaProduct | null>(null)
+  const [totalCalories, setTotalCalories] = useState(0)
 
   const brands = ["all", "蜜雪冰城", "奈雪的茶", "coco", "茶百道", "一点点", "益禾堂", "沪上阿姨"];
+
+  // 计算配料热量
+  const calculateIngredientsCalories = () => {
+    const ingredientData = {
+      珍珠: 2.34, // per gram
+      椰果: 0.4,
+      芋圆: 2.0,
+      红豆: 2.38,
+      布丁: 1.5,
+      仙草: 0.3,
+      西米: 1.2,
+      芋泥: 0.88,
+      波霸: 0.72,
+      小珍珠: 0.7,
+      茶冻: 0.52,
+      栀子冻: 0.58,
+      椰奶冻: 1.54,
+      仙草冻: 0.96,
+      青稞: 1.44,
+      西米明珠: 1.58,
+      益禾布丁: 1.2,
+      益禾红豆: 0.9,
+      益禾椰果: 0.78,
+      冻冻: 0.54,
+      多肉晶球: 0.7,
+      益禾仙草: 0.8,
+      益禾珍珠: 2.2,
+      葡萄果肉: 0.5,
+      芝士奶盖: 2.4,
+      马蹄爆爆珠: 0.72,
+      马蹄丸子: 0.68,
+      西柚粒: 0.3,
+      血糯米: 2.2,
+      奶冻: 1.2,
+      沪上冻冻: 0.56,
+      厚芋泥: 1.84,
+      小多肉: 0.5,
+      谷谷茶金砖: 0.9,
+      米麻薯: 2.78,
+      黑糖波波: 3.2,
+      大多肉: 0.6,
+      沪上芝士奶盖: 3.4,
+    }
+    return Object.entries(selectedIngredients).reduce((total, [name, amount]) => {
+      return total + (ingredientData[name as keyof typeof ingredientData] || 0) * amount
+    }, 0)
+  }
+
+  // 更新总热量
+  useEffect(() => {
+    const ingredientsCalories = calculateIngredientsCalories()
+    const productCalories = selectedProduct ? selectedProduct.calories : 0
+    setTotalCalories(Math.round(productCalories + ingredientsCalories))
+  }, [selectedProduct, selectedIngredients])
+
+  // 将总热量更新到父组件的总热量显示中
+  useEffect(() => {
+    // 找到父组件中的总热量元素并更新
+    const totalCaloriesElement = document.querySelector(".text-5xl.font-bold.text-mint-dark")
+    if (totalCaloriesElement) {
+      // 确保我们没有覆盖注释
+      if (!totalCaloriesElement.textContent?.includes("/*")) {
+        totalCaloriesElement.textContent = `${totalCalories}`
+      }
+    }
+
+    // 更新奶茶名称
+    const drinkNameElement = document.querySelector(".font-medium.truncate.max-w-\\[120px\\].text-right")
+    if (drinkNameElement && selectedProduct) {
+      drinkNameElement.textContent = selectedProduct.name
+    }
+
+    // 更新奶茶基础热量
+    const baseCaloriesElement = document.querySelector(".border-b.pb-2.border-mint\\/20 .font-medium:last-child")
+    if (baseCaloriesElement && selectedProduct) {
+      baseCaloriesElement.textContent = `${selectedProduct.calories} kcal`
+    }
+
+    // 更新配料总热量
+    const ingredientsCaloriesElement = document.querySelectorAll(".border-b.pb-2.border-mint\\/20")[2]?.querySelector(".font-medium:last-child")
+    if (ingredientsCaloriesElement) {
+      ingredientsCaloriesElement.textContent = `${calculateIngredientsCalories().toFixed(0)} kcal`
+    }
+
+    // 更新相当于克糖
+    const sugarEquivalentElement = document.querySelector(".font-medium:nth-of-type(3)")
+    if (sugarEquivalentElement) {
+      sugarEquivalentElement.textContent = `${Math.round(totalCalories / 4)} 克糖`
+    }
+
+    // 更新需要跑步分钟数
+    const runningTimeElement = document.querySelector(".font-medium:nth-of-type(4)")
+    if (runningTimeElement) {
+      runningTimeElement.textContent = `${Math.round(totalCalories / 8)} 分钟消耗`
+    }
+
+    // 更新占日摄入百分比
+    const dailyIntakeElement = document.querySelector(".font-medium:nth-of-type(5)")
+    if (dailyIntakeElement) {
+      dailyIntakeElement.textContent = `${Math.round((totalCalories / 2000) * 100)}%`
+    }
+  }, [totalCalories, selectedProduct, selectedIngredients])
 
   const filteredProducts = mockProducts.filter((product) => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -9641,6 +9751,14 @@ export default function BrandSearch() {
 
     return matchesSearch && matchesBrand && matchesCalorie
   })
+
+  // 选择产品并传递信息给父组件
+  const handleSelectProduct = (product: MilkTeaProduct) => {
+    setSelectedProduct(product);
+    if (typeof onDrinkSelect === 'function') {
+      onDrinkSelect(product);
+    }
+  }
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -9729,7 +9847,7 @@ export default function BrandSearch() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredProducts.map((product) => (
-            <Card key={product.id} className="border-mint/20 hover:shadow-md transition-shadow cursor-pointer">
+            <Card key={product.id} className={`border-mint/20 hover:shadow-md transition-shadow cursor-pointer ${selectedProduct?.id === product.id ? 'border-mint-dark border-2 shadow-lg' : ''}`} onClick={() => handleSelectProduct(product)}>
               <CardContent className="p-4">
                 <div className="flex items-start justify-between mb-3">
                   <div>

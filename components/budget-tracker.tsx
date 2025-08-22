@@ -1,225 +1,59 @@
 "use client"
 
 import { useState } from "react"
-import { Target, AlertTriangle, Calendar } from "lucide-react"
+import { Target, AlertTriangle, Calendar, Info } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 
 export default function BudgetTracker() {
-  const [dailyBudget, setDailyBudget] = useState(300)
-  const [weeklyBudget, setWeeklyBudget] = useState(1500)
-
-  // Mock current consumption
-  const todayConsumed = 285
-  const weekConsumed = 1680
-
-  const dailyProgress = (todayConsumed / dailyBudget) * 100
-  const weeklyProgress = (weekConsumed / weeklyBudget) * 100
-
-  const dailyRemaining = dailyBudget - todayConsumed
-  const weeklyRemaining = weeklyBudget - weekConsumed
-
-  const isOverDailyBudget = todayConsumed > dailyBudget
-  const isOverWeeklyBudget = weekConsumed > weeklyBudget
-
   return (
     <div className="space-y-6">
-      {/* Budget Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Daily Budget */}
-        <Card className={`border-2 ${isOverDailyBudget ? "border-red-200 bg-red-50" : "border-mint/20"}`}>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center">
-              <Target className="w-5 h-5 text-mint mr-2" />
-              今日预算
-            </CardTitle>
-            <CardDescription>
-              {isOverDailyBudget ? "今天额度已超支" : `还剩 ${dailyRemaining}kcal 可以享用`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold text-mint-dark">{todayConsumed}</span>
-              <span className="text-sm text-gray-500">/ {dailyBudget} kcal</span>
-            </div>
-
-            <Progress
-              value={Math.min(dailyProgress, 100)}
-              className={`h-3 ${isOverDailyBudget ? "[&>div]:bg-red-500" : "[&>div]:bg-mint"}`}
-            />
-
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">使用率</span>
-              <span className={`font-medium ${isOverDailyBudget ? "text-red-600" : "text-mint-dark"}`}>
-                {Math.round(dailyProgress)}%
-              </span>
-            </div>
-
-            {isOverDailyBudget && (
-              <div className="bg-red-100 p-3 rounded-lg flex items-start space-x-2">
-                <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5" />
-                <div className="text-sm text-red-800">
-                  <p className="font-medium">今天额度快用完啦～</p>
-                  <p>明天再喝更合适哦，或者选择无糖茶饮</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Weekly Budget */}
-        <Card className={`border-2 ${isOverWeeklyBudget ? "border-red-200 bg-red-50" : "border-mint/20"}`}>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center">
-              <Calendar className="w-5 h-5 text-mint mr-2" />
-              本周预算
-            </CardTitle>
-            <CardDescription>
-              {isOverWeeklyBudget ? "本周预算已超支" : `还剩 ${Math.abs(weeklyRemaining)}kcal`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold text-mint-dark">{weekConsumed}</span>
-              <span className="text-sm text-gray-500">/ {weeklyBudget} kcal</span>
-            </div>
-
-            <Progress
-              value={Math.min(weeklyProgress, 100)}
-              className={`h-3 ${isOverWeeklyBudget ? "[&>div]:bg-red-500" : "[&>div]:bg-mint"}`}
-            />
-
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">使用率</span>
-              <span className={`font-medium ${isOverWeeklyBudget ? "text-red-600" : "text-mint-dark"}`}>
-                {Math.round(weeklyProgress)}%
-              </span>
-            </div>
-
-            {isOverWeeklyBudget && (
-              <div className="bg-red-100 p-3 rounded-lg flex items-start space-x-2">
-                <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5" />
-                <div className="text-sm text-red-800">
-                  <p className="font-medium">本周预算已超支 {Math.abs(weeklyRemaining)}kcal</p>
-                  <p>建议接下来几天选择低卡奶茶</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Budget History */}
-      <Card className="border-mint/20">
+      {/* Calorie Information */}
+      <Card className="border-mint/20 bg-blue-50">
         <CardHeader>
-          <CardTitle className="text-lg">预算使用历史</CardTitle>
-          <CardDescription>过去7天的预算使用情况</CardDescription>
+          <CardTitle className="text-lg flex items-center">
+            <Info className="w-5 h-5 text-blue-500 mr-2" />
+            卡路里概念说明
+          </CardTitle>
+          <CardDescription>了解卡路里与健康的关系，帮助你做出更明智的奶茶选择</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[
-              { date: "今天", consumed: 285, budget: 300, status: "good" },
-              { date: "昨天", consumed: 320, budget: 300, status: "over" },
-              { date: "1/19", consumed: 180, budget: 300, status: "excellent" },
-              { date: "1/18", consumed: 450, budget: 300, status: "over" },
-              { date: "1/17", consumed: 220, budget: 300, status: "good" },
-              { date: "1/16", consumed: 285, budget: 300, status: "good" },
-              { date: "1/15", consumed: 140, budget: 300, status: "excellent" },
-            ].map((day, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <span className="font-medium text-sm w-12">{day.date}</span>
-                  <div className="flex-1">
-                    <Progress
-                      value={(day.consumed / day.budget) * 100}
-                      className={`h-2 w-32 ${
-                        day.status === "excellent"
-                          ? "[&>div]:bg-green-500"
-                          : day.status === "good"
-                            ? "[&>div]:bg-mint"
-                            : "[&>div]:bg-red-500"
-                      }`}
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm font-mono">{day.consumed}kcal</span>
-                  <Badge
-                    className={
-                      day.status === "excellent"
-                        ? "bg-green-100 text-green-800"
-                        : day.status === "good"
-                          ? "bg-mint/20 text-mint-dark"
-                          : "bg-red-100 text-red-800"
-                    }
-                  >
-                    {day.status === "excellent" ? "优秀" : day.status === "good" ? "良好" : "超支"}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Budget Settings */}
-      <Card className="border-mint/20">
-        <CardHeader>
-          <CardTitle className="text-lg">预算设置</CardTitle>
-          <CardDescription>调整你的每日和每周热量预算</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">每日预算 (kcal)</label>
-              <div className="flex items-center space-x-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setDailyBudget(Math.max(100, dailyBudget - 50))}
-                  className="border-mint/30 bg-transparent"
-                >
-                  -50
-                </Button>
-                <span className="font-mono text-lg px-4">{dailyBudget}</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setDailyBudget(dailyBudget + 50)}
-                  className="border-mint/30 bg-transparent"
-                >
-                  +50
-                </Button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">每周预算 (kcal)</label>
-              <div className="flex items-center space-x-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setWeeklyBudget(Math.max(500, weeklyBudget - 200))}
-                  className="border-mint/30 bg-transparent"
-                >
-                  -200
-                </Button>
-                <span className="font-mono text-lg px-4">{weeklyBudget}</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setWeeklyBudget(weeklyBudget + 200)}
-                  className="border-mint/30 bg-transparent"
-                >
-                  +200
-                </Button>
-              </div>
-            </div>
-          </div>
-          <Button className="bg-mint hover:bg-mint-dark text-white">保存设置</Button>
+        <CardContent className="space-y-3 text-sm">
+          <p>• 卡路里(kcal)是能量的单位，用于衡量食物提供的能量。当你摄入的卡路里超过身体消耗的量时，多余的能量会以脂肪的形式储存起来。</p>
+          <p>• 普通成年人每天需要约2000-2500卡路里来维持基本生理功能和日常活动，具体需求因年龄、性别、体重和活动水平而异。</p>
+          <p>• 奶茶的卡路里含量差异很大：</p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>1杯(500ml)无糖茶饮料：约50-100卡路里</li>
+            <li>1杯(500ml)低糖奶茶：约200-300卡路里</li>
+            <li>1杯(500ml)普通奶茶：约300-500卡路里</li>
+            <li>1杯(500ml)加奶盖的奶茶：约500-700卡路里</li>
+          </ul>
+          <p>• 不同活动消耗300卡路里约需要：</p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>步行约60分钟（5公里/小时）</li>
+            <li>跑步约20分钟（8公里/小时）</li>
+            <li>跳绳约15分钟</li>
+            <li>游泳约25分钟（自由泳）</li>
+            <li>骑自行车约40分钟（15公里/小时）</li>
+          </ul>
+          <p>• 过量摄入卡路里会导致体重增加，建议每天奶茶摄入不超过当日热量的15%。例如，如果你每天需要2000卡路里，那么每天的奶茶热量最好控制在300卡路里以内。</p>
+          <p>• 选择低卡配料可以有效控制奶茶的总热量：</p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>仙草、冻冻、椰果等配料热量较低（每100g约30-60kcal）</li>
+            <li>珍珠、芋圆、红豆等淀粉类配料热量较高（每100g约150-250kcal）</li>
+            <li>芝士奶盖、奶油等配料脂肪含量高，热量也较高（每100g约200-300kcal）</li>
+          </ul>
+          <p>• 糖度选择对热量的影响：</p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>全糖奶茶比无糖奶茶每杯多出约60-120kcal</li>
+            <li>三分糖或五分糖是较好的选择，可以减少约40-80kcal热量</li>
+            <li>选择代糖（如赤藓糖醇）可以在不影响口感的前提下降低热量</li>
+          </ul>
         </CardContent>
       </Card>
     </div>
   )
+
 }
